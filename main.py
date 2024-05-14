@@ -23,14 +23,9 @@ def isascii(s):
     # Used to see whether text is in ASCII or not
     return len(s) == len(s.encode())
 
-@client.event
-async def on_message(message):
-    if message.author == client.user: # We don't want to strike the robot itself
-        return
-
-    if message.channel.id != int(os.getenv("CHANNEL")): # This isn't the channel we want
-        return # Not the channel we want
-
+async def robot(message: discord.Message):
+    if message.author == client.user: return # We don't want to strike the robot itself
+    if message.channel.id != int(os.getenv("CHANNEL")): return # Not the channel we want
     if not isascii(message.content):
         await message.reply("No unicode is allowed.") # Ban unicode
         await message.delete()
@@ -42,23 +37,31 @@ async def on_message(message):
         conn.commit()
     except sqlite3.IntegrityError: # I know there's probably a better way of doing this, but this is a really quick script, so whatever
         # Non-unique
-        await message.reply("You can only post unique text here.")
-        await message.delete()
-
         infraction_amount = cur.execute("select infractions from r9k_infractions where id=?;", (str(message.author.id),)).fetchone()
-        if infraction_amount == None:
+        if infraction_amount is None:
             # Put them in the database
             infraction_amount = (1,)
             cur.execute("insert into r9k_infractions values(?, ?);", (message.author.id,infraction_amount[0],))
         else:
             # Just update them
             cur.execute("UPDATE r9k_infractions SET infractions = infractions + 1 WHERE id = ?", (str(message.author.id),))
+            infraction_amount = (infraction_amount[0] + 1,) # To update the infraction amount without doing a DB call
         conn.commit()
-        punishment_time = 2 ** infraction_amount[0]
+        punishment_time_seconds = 2 ** infraction_amount[0]
 
         time_now = datetime.datetime.now(datetime.timezone.utc)
-        punish_time = datetime.datetime.fromtimestamp(time_now.timestamp() + punishment_time, datetime.timezone.utc)
+        punishment_date_time = datetime.datetime.fromtimestamp(time_now.timestamp() + punishment_time_seconds, datetime.timezone.utc)
 
-        await message.author.timeout(punish_time)
+        await message.author.timeout(punishment_date_time)
+        await message.channel.send(f"<@{message.author.id}> has been muted for **{punishment_time_seconds}** seconds.")
+        await message.delete()
+
+@client.event
+async def on_message_edit(_before, after):
+    await robot(after)
+
+@client.event
+async def on_message(message: discord.Message):    
+    await robot(message)
 
 client.run(os.getenv("TOKEN"))
