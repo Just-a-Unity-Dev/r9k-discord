@@ -49,7 +49,7 @@ async def on_message(message):
         if infraction_amount == None:
             # Put them in the database
             infraction_amount = (1,)
-            cur.execute("insert into r9k_infractions values(?, ?);", (message.author.id,infraction_amount,))
+            cur.execute("insert into r9k_infractions values(?, ?);", (message.author.id,infraction_amount[0],))
         else:
             # Just update them
             cur.execute("UPDATE r9k_infractions SET infractions = infractions + 1 WHERE id = ?", (str(message.author.id),))
