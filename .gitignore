@@ -1,3 +1,4 @@
 .env
 __pyenv__
 *.db
+venv
