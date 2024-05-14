@@ -62,6 +62,9 @@ async def on_message_edit(_before, after):
 
 @client.event
 async def on_message(message: discord.Message):
+    if message.channel.id == int(os.getenv("CHANNEL")):
+        return await robot(message)
+
     # Basic stats command
     if message.content == "-stats":
         await message.delete()
@@ -82,7 +85,5 @@ async def on_message(message: discord.Message):
         await message.channel.send(most_leaderboard, allowed_mentions=discord.AllowedMentions.none())
 
         return
-
-    await robot(message)
 
 client.run(os.getenv("TOKEN"))
