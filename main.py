@@ -40,7 +40,7 @@ async def on_message(message):
     try:
         cur.execute("insert into r9k_posts values(?);", (hash,))
         conn.commit()
-    except sqlite3.IntegrityError: # I know there's probably a better way of doing this but fuck all at this point
+    except sqlite3.IntegrityError: # I know there's probably a better way of doing this, but this is a really quick script, so whatever
         # Non-unique
         await message.reply("You can only post unique text here.")
         await message.delete()
