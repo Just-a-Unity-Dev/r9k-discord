@@ -61,7 +61,28 @@ async def on_message_edit(_before, after):
     await robot(after)
 
 @client.event
-async def on_message(message: discord.Message):    
+async def on_message(message: discord.Message):
+    # Basic stats command
+    if message.content == "-stats":
+        await message.delete()
+        most_infractions = cur.execute("select infractions from r9k_infractions where id=?;", (str(message.author.id),)).fetchone()
+        if most_infractions is None:
+            await message.channel.send(f"<@{message.author.id}>, you have no infractions.")
+        else:
+            await message.channel.send(f"<@{message.author.id}>, you have {most_infractions[0]} infractions, and will be muted for {2 ** (most_infractions[0] + 1)} seconds next time.")
+        return
+    
+    # Leaderboard command, to get the top ten users with the most infractions.
+    if message.content == "-lb":
+        await message.delete()
+        most_infractions = cur.execute("select id, infractions from r9k_infractions order by infractions desc;").fetchmany(10)
+
+        most_leaderboard = "## Most Infractions\n\n"
+        for x in most_infractions: most_leaderboard += f"<@{x[0]}>: {x[1]} infractions, next mute will be **{2 ** (x[1] + 1)}** seconds\n"
+        await message.channel.send(most_leaderboard, allowed_mentions=discord.AllowedMentions.none())
+
+        return
+
     await robot(message)
 
 client.run(os.getenv("TOKEN"))
