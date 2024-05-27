@@ -6,6 +6,9 @@ import os # Env
 from dotenv import load_dotenv # Env
 load_dotenv()
 
+silent = os.getenv("SILENT") == "true"
+commands = os.getenv("COMMANDS") == "true"
+
 conn = sqlite3.connect("main.db")
 cur = conn.cursor()
 
@@ -27,7 +30,7 @@ async def robot(message: discord.Message):
     if message.author == client.user: return # We don't want to strike the robot itself
     if message.channel.id != int(os.getenv("CHANNEL")): return # Not the channel we want
     if not isascii(message.content):
-        await message.reply("No unicode is allowed.") # Ban unicode
+        if not silent: await message.reply("No unicode is allowed.") # Ban unicode
         await message.delete()
 
     hex = hashlib.md5(message.content.encode()).hexdigest()
@@ -53,7 +56,7 @@ async def robot(message: discord.Message):
         punishment_date_time = datetime.datetime.fromtimestamp(time_now.timestamp() + punishment_time_seconds, datetime.timezone.utc)
 
         await message.author.timeout(punishment_date_time)
-        await message.channel.send(f"<@{message.author.id}> has been muted for **{punishment_time_seconds}** seconds.")
+        if not silent: await message.channel.send(f"<@{message.author.id}> has been muted for **{punishment_time_seconds}** seconds.")
         await message.delete()
 
 @client.event
@@ -65,6 +68,7 @@ async def on_message(message: discord.Message):
     if message.channel.id == int(os.getenv("CHANNEL")):
         return await robot(message)
 
+    if not commands: return # Commands are disabled.
     # Basic stats command
     if message.content == "-stats":
         await message.delete()
