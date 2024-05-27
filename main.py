@@ -77,7 +77,6 @@ async def robot(message: discord.Message):
 
 @client.event
 async def on_message_edit(before: discord.Message, after: discord.Message):
-    print(before)
     if before.content != after.content:
         await robot(after)
 
