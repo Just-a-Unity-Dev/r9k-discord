@@ -2,12 +2,16 @@ import datetime # For timing out members
 import discord # For the library
 import hashlib # For hashing messages
 import sqlite3 # For handling DB
-import os # Env
-from dotenv import load_dotenv # Env
-load_dotenv()
+import yaml # Config handling
 
-silent = os.getenv("SILENT") == "true"
-commands = os.getenv("COMMANDS") == "true"
+config = {}
+with open("config.yml") as stream:
+    try:
+        config = yaml.safe_load(stream)
+    except yaml.YAMLError as exc:
+        raise Exception(exc)
+
+def is_silent(): return config['options']['silent_mode']
 
 conn = sqlite3.connect("main.db")
 cur = conn.cursor()
@@ -28,9 +32,9 @@ def isascii(s):
 
 async def robot(message: discord.Message):
     if message.author == client.user: return # We don't want to strike the robot itself
-    if message.channel.id != int(os.getenv("CHANNEL")): return # Not the channel we want
+    if not (message.channel.id in config['channels']): return # Not the channel we want
     if not isascii(message.content):
-        if not silent: await message.reply("No unicode is allowed.") # Ban unicode
+        if not is_silent(): await message.reply("No unicode is allowed.") # Ban unicode
         await message.delete()
 
     hex = hashlib.md5(message.content.encode()).hexdigest()
@@ -55,8 +59,8 @@ async def robot(message: discord.Message):
         time_now = datetime.datetime.now(datetime.timezone.utc)
         punishment_date_time = datetime.datetime.fromtimestamp(time_now.timestamp() + punishment_time_seconds, datetime.timezone.utc)
 
-        await message.author.timeout(punishment_date_time)
-        if not silent: await message.channel.send(f"<@{message.author.id}> has been muted for **{punishment_time_seconds}** seconds.")
+        await message.author.timeout(punishment_date_time, reason=f"ROBOT: {infraction_amount[0]}th infraction.")
+        if not is_silent(): await message.channel.send(f"<@{message.author.id}> has been muted for **{punishment_time_seconds}** seconds.")
         await message.delete()
 
 @client.event
@@ -65,10 +69,9 @@ async def on_message_edit(_before, after):
 
 @client.event
 async def on_message(message: discord.Message):
-    if message.channel.id == int(os.getenv("CHANNEL")):
-        return await robot(message)
+    if message.channel.id in config['channels']: return await robot(message)
 
-    if not commands: return # Commands are disabled.
+    if not config["options"]['run_commands']: return # Commands are disabled.
     # Basic stats command
     if message.content == "-stats":
         await message.delete()
@@ -90,4 +93,4 @@ async def on_message(message: discord.Message):
 
         return
 
-client.run(os.getenv("TOKEN"))
+client.run(config['bot']['token'])

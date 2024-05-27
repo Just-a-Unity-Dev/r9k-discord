@@ -1,0 +1,12 @@
+bot:
+  token: DISCORD_TOKEN
+
+options:
+  silent_mode: true
+  allow_commands: false
+
+channels:
+- Channel
+- IDs
+- Go
+- Here
