@@ -9,8 +9,8 @@ This is a recreation of the classic XKCD and /r9k/ robot automoderation script. 
 - Integration with discord's timeout system
 - PyYAMl config
 - Leaderboard and stats command
+- Image hashing
 
 ## Wishlist
 
-- Image/video hashing
 - Adding as role as an alternative to discord timeouts
