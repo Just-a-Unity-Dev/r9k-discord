@@ -19,6 +19,8 @@ cur = conn.cursor()
 # Create DB tables
 cur.execute("""CREATE TABLE IF NOT EXISTS r9k_posts (text BLOB NOT NULL UNIQUE);""")
 conn.commit()
+cur.execute("""CREATE TABLE IF NOT EXISTS r9k_images (text BLOB NOT NULL UNIQUE);""")
+conn.commit()
 cur.execute("""CREATE TABLE IF NOT EXISTS r9k_infractions (id TEXT NOT NULL UNIQUE, infractions INT NOT NULL);""")
 conn.commit()
 
@@ -39,10 +41,18 @@ async def robot(message: discord.Message):
 
     hex = hashlib.md5(message.content.encode()).hexdigest()
     hash = bin(int(hex,16)) # Turns this into a binary hash
-    search_hash = f"{message.guild.id}-{hash}"
 
     try:
-        cur.execute("insert into r9k_posts values(?);", (search_hash,))
+        cur.execute("insert into r9k_posts values(?);", (hash,))
+        if message.attachments:
+            for attachment in message.attachments:
+                image = await attachment.read() # Reads attachment
+                image_hex = hashlib.md5(image).hexdigest()
+                image_hash = bin(int(image_hex,16)) # Turns this image into a binary hash
+
+                print("Testing image")
+
+                cur.execute("insert into r9k_images values(?);", (image_hash,))
         conn.commit()
     except sqlite3.IntegrityError: # I know there's probably a better way of doing this, but this is a really quick script, so whatever
         # Non-unique
@@ -67,12 +77,14 @@ async def robot(message: discord.Message):
 
 @client.event
 async def on_message_edit(before: discord.Message, after: discord.Message):
+    print(before)
     if before.content != after.content:
         await robot(after)
 
 @client.event
 async def on_message(message: discord.Message):
-    if message.channel.id in config['channels']: return await robot(message)
+    if message.channel.id in config['channels']:
+        return await robot(message)
 
     if not config["options"]['run_commands']: return # Commands are disabled.
     # Basic stats command
