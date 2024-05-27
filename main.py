@@ -39,8 +39,10 @@ async def robot(message: discord.Message):
 
     hex = hashlib.md5(message.content.encode()).hexdigest()
     hash = bin(int(hex,16)) # Turns this into a binary hash
+    search_hash = f"{message.guild.id}-{hash}"
+
     try:
-        cur.execute("insert into r9k_posts values(?);", (hash,))
+        cur.execute("insert into r9k_posts values(?);", (search_hash,))
         conn.commit()
     except sqlite3.IntegrityError: # I know there's probably a better way of doing this, but this is a really quick script, so whatever
         # Non-unique
