@@ -46,12 +46,12 @@ async def robot(message: discord.Message):
         cur.execute("insert into r9k_posts values(?);", (hash,))
         if message.attachments:
             for attachment in message.attachments:
+                # Above the
+                if attachment.size > config['options']['max_bytes']: raise sqlite3.IntegrityError()
+
                 image = await attachment.read() # Reads attachment
                 image_hex = hashlib.md5(image).hexdigest()
                 image_hash = bin(int(image_hex,16)) # Turns this image into a binary hash
-
-                print("Testing image")
-
                 cur.execute("insert into r9k_images values(?);", (image_hash,))
         conn.commit()
     except sqlite3.IntegrityError: # I know there's probably a better way of doing this, but this is a really quick script, so whatever
@@ -86,7 +86,7 @@ async def on_message(message: discord.Message):
     if message.channel.id in config['channels']:
         return await robot(message)
 
-    if not config["options"]['run_commands']: return # Commands are disabled.
+    if not config["options"]['allow_commands']: return # Commands are disabled.
     # Basic stats command
     if message.content == "-stats":
         await message.delete()

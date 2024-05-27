@@ -4,6 +4,7 @@ bot:
 options:
   silent_mode: true
   allow_commands: false
+  max_bytes: 10000000 # 20 MB
 
 channels:
 - Channel
